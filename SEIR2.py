@@ -83,7 +83,18 @@ plt.legend(loc='center left',
 
 plt.subplot(212)
 
-plt.plot(z.t+32,z.y[3]*0.02,'k-',label=r'Fatalities')
+# Compute the fatalities
+# f = int((infectious@t+shift)*fatRate)
+#        fatRate=0.02
+#        shift= 32 days
+fatRate = 0.02
+shift = 32
+fatalities = [0] * len(z.y[0])
+for i in range(len(z.y[0])):
+    y = z.y[2].tolist()[0:i]
+    fatalities[i] = np.trapz(y) * fatRate
+
+plt.plot(z.t,fatalities,'k-',label=r'Fatalities')
 plt.plot(ref[0],ref[5],'kx',label=r'$fatalities_{ref}$')
 plt.legend(loc='center left',
            fontsize='xx-small')

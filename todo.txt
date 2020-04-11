@@ -5,8 +5,7 @@
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html#scipy.integrate.solve_ivp
     #z = solve_ivp(model,t,z0)
 5_done bring in Gabgo data as baseline and compare the results
-
-6_ make a git repo out of this
+6_ done make a git repo out of this
 
 7_ test the fatalities:
     f = int((infectious@t+shift)*fatRate)
