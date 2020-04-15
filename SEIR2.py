@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 #   Rm: Individuals recoveded from mild symptoms
 #   Rh: Individuals recoveded from hospitalisation
 #   Rd: Death Individuals
-idx = ['S','E','I','Im','Is','Id','R','Rm','Rs','Rd']
+idx = ['S','E','I','Im','Is','Id','Ish','R','Rm','Rs','Rd']
 def i(dofStr):
     return idx.index(dofStr)
 
@@ -56,49 +56,48 @@ TDeath= 32   # Time from end of incubation to death [days]
 #   dRs(t)/dt = 1/Tsevere * Ish(t)
 #   dRd(t)/dt = 1/Tdead   * Id(t)
 
-# def x = [       S              E          I        Im         Is         Id        R        Rm   Rs   Rd ]^T
+# def x = [       S              E          I        Im         Is         Id        Ish        R    Rm   Rs   Rd ]^T
 # and A =
-#  S      [-Rt/(Tinf*N)*I(t)                                                                               ]
-#  E      [ Rt/(Tinf*N)*I(t)  -1/Tinc                                                                      ]
-#  I      [                    1/Tinc    -1/Tinf                                                           ]
-#  Im     [                             pm*1/Tinf  -1/Tmild                                                ]
-#  Is     [                             ps*1/Tinf            -1/Thosp                                      ]
-#  Id     [                             pd*1/Tinf                       -1/Tdead                           ]
-#  R      [                               1/Tinf                                      0                    ]
-#  Rm     [                                         1/Tmild                                   0            ]
-#  Rs     [                                                   1/Thosp                               0      ]
-#  Rd     [                                                              1/Tdead                         0 ]
+#  S      [-Rt/(Tinf*N)*I(t)                                                                                      ]
+#  E      [ Rt/(Tinf*N)*I(t)  -1/Tinc                                                                             ]
+#  I      [                    1/Tinc    -1/Tinf                                                                  ]
+#  Im     [                             pm*1/Tinf  -1/Tmild                                                       ]
+#  Is     [                             ps*1/Tinf           -1/T_hospLag                                          ]
+#  Id     [                             pd*1/Tinf                        -1/Tdead                                 ]
+#  Ish    [                                                  1/T_hospLag         -1/Tsevere                       ]
+#  R      [                               1/Tinf                                                0                 ]
+#  Rm     [                                         1/Tmild                                          0            ]
+#  Rs     [                                                                       1/Tsevere               0       ]
+#  Rd     [                                                               1/Tdead                              0  ]
 A = np.zeros((len(idx), len(idx)))
 # --
 A[i('E'),i('E')] = -1. / Tinc
 A[i('I'),i('E')] =  1. / Tinc
 # --
-A[i('I'),i('I')]  = -1. / Tinf
+A[i('I'),i('I')]  =     -1. / Tinf
 A[i('Im'),i('I')] = pm * 1. / Tinf
 A[i('Is'),i('I')] = ps * 1. / Tinf
 A[i('Id'),i('I')] = pd * 1. / Tinf
-A[i('R'),i('I')]  =  1. / Tinf
+A[i('R'),i('I')]  =      1. / Tinf
 # --
 A[i('Im'),i('Im')] = -1. / Tmild
 A[i('Rm'),i('Im')] =  1. / Tmild
 # --
 A[i('Is'),i('Is')] = -1. / THospLag
-A[i('Rs'),i('Is')] =  1. / THospLag
+A[i('Ish'),i('Is')]=  1. / THospLag
 # --
 A[i('Id'),i('Id')] = -1. / TDeath
 A[i('Rd'),i('Id')] =  1. / TDeath
 
+A[i('Ish'),i('Ish')]= -1. / TSevere
+A[i('Rs'),i('Ish')] =  1. / TSevere
+
 def model(t,z):
 
-    # print("z[i('I')]=",z[i('I')])
-
-    # Update non const part of the matrix A
+    # Update non-const part of the matrix A
     A[i('S'),i('S')]= - Rt/(Tinf*N) * z[i('I')]
     A[i('E'),i('S')]=   Rt/(Tinf*N) * z[i('I')]
 
-    # print("A=", A)
-    # print("z=",z)
-    # print("A * z=",np.dot(A,z))
     return np.dot(A,z)
 
 
@@ -107,8 +106,8 @@ E0 = 0.     # Exposed individuals @t0
 I0 = 1.     # Infected individuals @t0
 R0 = 0.
 
-#     S  E  I  Im    Is    Id    R  Rm    Rs    Rd
-x0 = [S0,E0,I0,I0*pm,I0*ps,I0*pd,R0,R0*pm,R0*ps,R0*pd]
+#     S  E  I  Im    Is    Id   Ish R  Rm    Rs    Rd
+x0 = [S0,E0,I0,I0*pm,I0*ps,I0*pd,I0,R0,R0*pm,R0*ps,R0*pd]
 
 # solve ODE in the timespan t=[0,200]
 z = solve_ivp(model,[0,200],x0)
