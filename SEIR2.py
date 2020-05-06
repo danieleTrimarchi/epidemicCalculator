@@ -4,6 +4,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 
+# Now estimate parameters using scipy.optimize.curve_fit
 
 # function that returns the ode to solve:
 
@@ -92,7 +93,7 @@ A[i('Rd'),i('Id')] =  1. / TDeath
 A[i('Ish'),i('Ish')]= -1. / TSevere
 A[i('Rs'),i('Ish')] =  1. / TSevere
 
-def model(t,z):
+def OdeModel(t,z):
 
     # Update non-const part of the matrix A
     A[i('S'),i('S')]= - Rt/(Tinf*N) * z[i('I')]
@@ -110,7 +111,7 @@ R0 = 0.
 x0 = [S0,E0,I0,I0*pm,I0*ps,I0*pd,I0,R0,R0*pm,R0*ps,R0*pd]
 
 # solve ODE in the timespan t=[0,200]
-z = solve_ivp(model,[0,200],x0)
+z = solve_ivp(OdeModel,[0,200],x0)
 
 # plot results
 plt.subplot(211)
@@ -147,3 +148,5 @@ plt.ylabel('Fatalities')
 plt.xlabel('time [days]')
 
 plt.show()
+
+
