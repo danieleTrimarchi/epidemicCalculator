@@ -36,6 +36,9 @@ TSevere = 28.6 # Length of hospital stay [days]
 THospLag = 5 # Lag between Infection of severe case and hospitalisation [days]
 TDeath= 32   # Time from end of incubation to death [days]
 
+# Number of saple points the solution is computed for
+nSamples= 30
+
 # -- EQUATIONS --
 #   dS(t)/dt = -(Rt/Tinf) * S(t) I(t)
 #   dE(t)/dt =  (Rt/Tinf) * S(t) I(t) - 1/Tinc E(t)
@@ -93,13 +96,28 @@ A[i('Rd'),i('Id')] =  1. / TDeath
 A[i('Ish'),i('Ish')]= -1. / TSevere
 A[i('Rs'),i('Ish')] =  1. / TSevere
 
-def OdeModel(t,z):
+# General function to solve the ODE model
+def GeneralSolver_ivp(t, x0):
 
-    # Update non-const part of the matrix A
-    A[i('S'),i('S')]= - Rt/(Tinf*N) * z[i('I')]
-    A[i('E'),i('S')]=   Rt/(Tinf*N) * z[i('I')]
+    localX0 = x0
 
-    return np.dot(A,z)
+    def ODEModel(t,x):
+        # Update non-const part of the matrix A
+        A[i('S'), i('S')] = - Rt / (Tinf * N) * x[i('I')]
+        A[i('E'), i('S')] = Rt / (Tinf * N) * x[i('I')]
+        return np.dot(A, x)
+
+    #sol = odeint(ODEModel, localC0, t)
+    tSpan = [t[0], t[-1]]
+
+    #               fun,     t_span,    y0,     t_eval
+    sol = solve_ivp(ODEModel, tSpan, localX0, t_eval=np.linspace(t[0], t[-1], nSamples))
+    r = np.transpose(sol.y)
+    return r
+
+# Solves the ODE model using the initial condition provided above
+def ODESolution(t, x):
+    return GeneralSolver_ivp(t, x)
 
 
 S0 = N      # Initial population
@@ -111,15 +129,17 @@ R0 = 0.
 x0 = [S0,E0,I0,I0*pm,I0*ps,I0*pd,I0,R0,R0*pm,R0*ps,R0*pd]
 
 # solve ODE in the timespan t=[0,200]
-z = solve_ivp(OdeModel,[0,200],x0)
+#z = solve_ivp(OdeModel,[0,200],x0)
+t = np.linspace(0, 200, num=nSamples)
+y = ODESolution(t,x0)
 
 # plot results
 plt.subplot(211)
 
-plt.plot(z.t,z.y[i('S')],'b-',label=r'S')
-plt.plot(z.t,z.y[i('E')],'y-',label=r'E')
-plt.plot(z.t,z.y[i('I')],'r-',label=r'I')
-plt.plot(z.t,z.y[i('R')],'g-',label=r'R')
+plt.plot(t,y[:,i('S')],'b-',label=r'S')
+plt.plot(t,y[:,i('E')],'y-',label=r'E')
+plt.plot(t,y[:,i('I')],'r-',label=r'I')
+plt.plot(t,y[:,i('R')],'g-',label=r'R')
 plt.ylabel('response')
 
 #plt.yscale("log")
@@ -132,14 +152,14 @@ plt.plot(ref[0],ref[2],'yx',label=r'$E_{ref}$')
 plt.plot(ref[0],ref[3],'rx',label=r'$I_{ref}$')
 plt.plot(ref[0],ref[4],'gx',label=r'$R_{ref}$')
 
-plt.title(r'R_0=$'+ str(Rt))
+plt.title(r'$R_0=$'+ str(Rt))
 plt.legend(loc='center left',
            fontsize='xx-small')
 
 plt.subplot(212)
 
 # Compute the fatalities
-plt.plot(z.t,z.y[i('Rd')],'k-',label=r'Rd')
+plt.plot(t,y[:,i('Rd')],'k-',label=r'Rd')
 plt.plot(ref[0],ref[5],'kx',label=r'$fatalities_{ref}$')
 plt.legend(loc='center left',
            fontsize='xx-small')

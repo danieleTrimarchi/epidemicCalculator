@@ -87,6 +87,8 @@ def GeneralSolver_ivp(t, k, C0):
 
     #sol = odeint(ODEModel, localC0, t)
     tSpan = [t[0], t[-1]]
+
+    #               fun,     t_span,    y0,     t_eval
     sol = solve_ivp(ODEModel, tSpan, [localC0], t_eval=np.linspace(t[0], t[-1], nSamples))
     r = np.transpose(sol.y)[:,0]
     return r
